@@ -7,6 +7,8 @@ void HookedGameManager::returnToLastScene(GJGameLevel* level) {
         return;
     }
 
+    // TODO: this doesnt work lol
+
     auto director = cocos2d::CCDirector::get();
 
     // current scene is playlayer or whatever

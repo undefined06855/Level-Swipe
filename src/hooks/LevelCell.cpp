@@ -2,7 +2,7 @@
 #include "../LevelInfoLayerLayer.hpp"
 
 void HookedLevelCell::onClick(cocos2d::CCObject* sender) {
-    // dont call orig TODO: change hook prio
+    // TODO: change hook prio
 
     auto browserLayer = cocos2d::CCScene::get()->getChildByType<LevelBrowserLayer>(0);
     if (!browserLayer) {

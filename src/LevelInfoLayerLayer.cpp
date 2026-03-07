@@ -41,6 +41,7 @@ bool LevelInfoLayerLayer::init(LevelBrowserLayer* layer, int index) {
         m_pages->addObject(page);
     }
 
+    // TODO: remove gap
     auto scroll = BoomScrollLayer::create(m_pages, 0, true);
 
     m_dots = scroll->getChildByType<cocos2d::CCSpriteBatchNode>(0);
