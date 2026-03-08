@@ -12,7 +12,7 @@ public:
     std::vector<LevelInfoLayer*> m_layers;
 
     void hideBGForLayer(cocos2d::CCLayer* layer);
-    void changePage(int offset);
+    void changePage(int page);
     void downloadLevel(int page);
 
     virtual void keyDown(cocos2d::enumKeyCodes key, double timestamp) override;

@@ -7,6 +7,7 @@ public:
 
     bool m_first;
     int m_pageToLoad;
+    geode::LoadingSpinner* m_spinner;
 
-    void loadNextPage();
+    bool loadNextPage();
 };

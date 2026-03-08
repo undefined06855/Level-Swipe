@@ -1,6 +1,7 @@
 #include "LevelInfoLayerLayer.hpp"
 #include "LoadNextPageLayer.hpp"
 #include "hooks/LevelInfoLayer.hpp"
+#include "hooks/LevelBrowserLayer.hpp"
 
 LevelInfoLayerLayer* LevelInfoLayerLayer::create(LevelBrowserLayer* layer, int index) {
     auto ret = new LevelInfoLayerLayer;
@@ -14,7 +15,9 @@ LevelInfoLayerLayer* LevelInfoLayerLayer::create(LevelBrowserLayer* layer, int i
 }
 
 LevelInfoLayerLayer* LevelInfoLayerLayer::get() {
-    return cocos2d::CCScene::get()->getChildByType<LevelInfoLayerLayer*>(0);
+    auto scene = cocos2d::CCScene::get();
+    if (!scene) return nullptr;
+    return scene->getChildByType<LevelInfoLayerLayer*>(0);
 }
 
 cocos2d::CCScene* LevelInfoLayerLayer::scene(LevelBrowserLayer* layer, int index) {
@@ -99,7 +102,8 @@ bool LevelInfoLayerLayer::init(LevelBrowserLayer* layer, int index) {
 
     pages->addObject(LoadNextPageLayer::create(/* last */ false, page));
 
-    m_scrollLayer = BoomScrollLayer::create(pages, 0, true);
+    int offset = index + 1; // go to page index+1 (add one because of loadnextpagelayer)
+    m_scrollLayer = BoomScrollLayer::create(pages, offset, true);
 
     m_dots = m_scrollLayer->getChildByType<cocos2d::CCSpriteBatchNode>(0);
     m_dots->setPositionY(255.f);
@@ -112,9 +116,9 @@ bool LevelInfoLayerLayer::init(LevelBrowserLayer* layer, int index) {
     m_scrollLayer->updateDots(0.f);
     this->addChildAtPosition(m_scrollLayer, geode::Anchor::BottomLeft);
 
-    m_scrollLayer->instantMoveToPage(index + 1); // add one because of the loadnextpagelayer
-    m_scrollLayer->m_page = index + 1;
-    this->scrollLayerWillScrollToPage(m_scrollLayer, index + 1); // doesn't get called
+    m_scrollLayer->instantMoveToPage(offset);
+    m_scrollLayer->m_page = offset;
+    this->scrollLayerWillScrollToPage(m_scrollLayer, offset); // doesn't get called
 
     this->setKeyboardEnabled(true);
 
@@ -126,7 +130,7 @@ void LevelInfoLayerLayer::hideBGForLayer(cocos2d::CCLayer* layer) {
     bg->setVisible(false);
 }
 
-void LevelInfoLayerLayer::changePage(int offset) {
+void LevelInfoLayerLayer::changePage(int page) {
     // taken from levelselectlayer
     if (m_scrollLayer->m_pageMoving) {
         m_scrollLayer->m_pageMoving = false;
@@ -135,17 +139,17 @@ void LevelInfoLayerLayer::changePage(int offset) {
         m_scrollLayer->moveToPageEnded();
     }
 
-    m_scrollLayer->moveToPage(m_scrollLayer->m_page + offset);
+    m_scrollLayer->moveToPage(page);
 }
 
 void LevelInfoLayerLayer::keyDown(cocos2d::enumKeyCodes key, double timestamp) {
     if (key == cocos2d::enumKeyCodes::KEY_Left) {
-        this->changePage(-1);
+        this->changePage(m_scrollLayer->m_page - 1);
         return;
     }
 
     if (key == cocos2d::enumKeyCodes::KEY_Right) {
-        this->changePage(1);
+        this->changePage(m_scrollLayer->m_page + 1);
         return;
     }
 
@@ -154,6 +158,11 @@ void LevelInfoLayerLayer::keyDown(cocos2d::enumKeyCodes key, double timestamp) {
     if (key == cocos2d::enumKeyCodes::KEY_Escape) {
         for (auto page : m_layers) {
             if (page && page->m_isBusy) return;
+        }
+
+        auto browser = HookedLevelBrowserLayer::getPreviousLevelBrowserLayer();
+        if (browser) {
+            browser->m_fields->m_isLoadingInBG = false;
         }
 
         // idk rob uses it just using it for mod compatibility
@@ -171,14 +180,21 @@ void LevelInfoLayerLayer::scrollLayerWillScrollToPage(BoomScrollLayer* layer, in
 
     // load next page if needed
     if (page == 0 || page == pages->count() - 1) {
-        m_scrollLayer->setTouchEnabled(false);
-        this->setKeyboardEnabled(false);
-        this->setKeypadEnabled(false);
-        static_cast<LoadNextPageLayer*>(pages->objectAtIndex(page))->loadNextPage(); // note: this will release this node
+        bool ret = static_cast<LoadNextPageLayer*>(pages->objectAtIndex(page))->loadNextPage();
+        if (!ret) {
+            if (page == 0) m_scrollLayer->instantMoveToPage(1);
+            else m_scrollLayer->instantMoveToPage(pages->count() - 2);
+        }
         return;
     }
 
-    if (page < 0 || page >= pages->count()) {
+    if (page < 0) {
+        m_scrollLayer->instantMoveToPage(0);
+        return;
+    }
+
+    if (page > pages->count() - 1) {
+        m_scrollLayer->instantMoveToPage(pages->count() - 1);
         return;
     }
 

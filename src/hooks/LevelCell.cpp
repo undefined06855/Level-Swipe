@@ -25,6 +25,12 @@ void HookedLevelCell::onClick(cocos2d::CCObject* sender) {
         return;
     }
 
+    // if we have one level and no pages, just create normal levelinfolayer
+    if (browserLayer->m_levels->count() == 1 && !browserLayer->m_leftArrow->isVisible() && !browserLayer->m_rightArrow->isVisible()) {
+        GameLevelManager::get()->gotoLevelPage(m_level);
+        return;
+    }
+
     auto index = getParent()->getChildren()->indexOfObject(this);
     auto scene = LevelInfoLayerLayer::scene(browserLayer, index);
     cocos2d::CCDirector::get()->pushScene(cocos2d::CCTransitionFade::create(.5f, scene));

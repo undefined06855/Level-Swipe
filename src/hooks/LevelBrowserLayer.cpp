@@ -8,12 +8,13 @@ HookedLevelBrowserLayer::Fields::Fields()
 HookedLevelBrowserLayer* HookedLevelBrowserLayer::getPreviousLevelBrowserLayer() {
     auto director = cocos2d::CCDirector::get();
 
+    if (director->m_pobScenesStack->count() < 2) return nullptr;
+
     // current scene is playlayer or levelinfolayer or whatever
     // scene before should be levelbrowserlayer
     auto sceneBefore = director->m_pobScenesStack->objectAtIndex(director->m_pobScenesStack->count() - 2);
     auto levelBrowserLayer = static_cast<cocos2d::CCScene*>(sceneBefore)->getChildByType<LevelBrowserLayer*>(0);
     auto cast = static_cast<HookedLevelBrowserLayer*>(levelBrowserLayer);
-    // cast->m_fields.self(); // create fields here to avoid bugs(?)
     return cast;
 }
 
@@ -30,12 +31,13 @@ int HookedLevelBrowserLayer::getIndexFromLevelID(int levelID) {
 }
 
 void HookedLevelBrowserLayer::loadLevelsFinished(cocos2d::CCArray* levels, const char* key, int type) {
-    auto fields = m_fields.self();
-    if (!fields->m_isLoadingInBG) {
+    // if there isnt a levelinfolayerlayer or we're not the previous layer in scene stack, return
+    if (!HookedLevelBrowserLayer::getPreviousLevelBrowserLayer() || !LevelInfoLayerLayer::get()) {
         LevelBrowserLayer::loadLevelsFinished(levels, key, type);
         return;
     }
 
+    auto fields = m_fields.self();
     auto director = cocos2d::CCDirector::get();
 
     director->popScene(); // no transition
@@ -55,23 +57,28 @@ void HookedLevelBrowserLayer::loadLevelsFinished(cocos2d::CCArray* levels, const
     fields->m_isLoadingInBG = false;
 
     // show animation
+    auto winSize = director->getWinSize();
     auto label = cocos2d::CCLabelBMFont::create(fmt::format("Page {}", m_searchObject->m_page + 1).c_str(), "bigFont.fnt");
     label->setScale(4.f);
-    label->setOpacity(127);
-    label->setPosition(director->getWinSize() / 2.f);
+    label->setOpacity(0);
+    label->setPosition({
+        winSize.width / 2.f + (fields->m_first ? -40.f : 40.f),
+        winSize.height / 2.f
+    });
     label->runAction(cocos2d::CCSequence::create(
+        cocos2d::CCDelayTime::create(.1f), // wait for initial lag spike
+        cocos2d::CCFadeTo::create(0.f, 200),
+
         cocos2d::CCSpawn::createWithTwoActions(
-            cocos2d::CCEaseExponentialOut::create(cocos2d::CCMoveBy::create(.5f, { fields->m_first ? 100.f : -100.f, 0.f })),
-            cocos2d::CCSequence::createWithTwoActions(
-                cocos2d::CCDelayTime::create(.1f),
-                cocos2d::CCEaseExponentialOut::create(cocos2d::CCFadeTo::create(.25f, 0))
-            )
+            cocos2d::CCEaseExponentialOut::create(cocos2d::CCMoveBy::create(1.f, { fields->m_first ? 100.f : -100.f, 0.f })),
+            cocos2d::CCEaseExponentialOut::create(cocos2d::CCFadeTo::create(.75f, 0))
         ),
 
         cocos2d::CCDelayTime::create(.5f),
         cocos2d::CCRemoveSelf::create(),
         nullptr
     ));
+
     geode::OverlayManager::get()->addChild(label);
 }
 

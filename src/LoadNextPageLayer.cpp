@@ -18,24 +18,33 @@ bool LoadNextPageLayer::init(bool first, int pageNumber) {
     m_first = first;
     m_pageToLoad = first ? pageNumber - 1 : pageNumber + 1;
 
-    auto bg = geode::createLayerBG();
-    this->addChildAtPosition(bg, geode::Anchor::BottomLeft, { -5.f, -5.f });
+    m_spinner = geode::LoadingSpinner::create(40.f);
+    m_spinner->setOpacity(0);
+    this->addChildAtPosition(m_spinner, geode::Anchor::Center);
 
     return true;
 }
 
-void LoadNextPageLayer::loadNextPage() {
+// returns true on success
+bool LoadNextPageLayer::loadNextPage() {
     auto browser = HookedLevelBrowserLayer::getPreviousLevelBrowserLayer();
-    if (!browser) return;
+    if (!browser) return false;
 
+    // if we're loading, don't do anything
+    if (browser->m_circle->isVisible()) {
+        return false;
+    }
+    
     if (!browser->m_leftArrow->isVisible() && m_first) {
+        browser->m_fields->m_isLoadingInBG = false;
         cocos2d::CCDirector::get()->popSceneWithTransition(.5f, cocos2d::kPopTransitionMoveInT);
-        return;
+        return true;
     }
 
     if (!browser->m_rightArrow->isVisible() && !m_first) {
+        browser->m_fields->m_isLoadingInBG = false;
         cocos2d::CCDirector::get()->popSceneWithTransition(.5f, cocos2d::kPopTransitionMoveInT);
-        return;
+        return true;
     }
 
     auto fields = browser->m_fields.self();
@@ -47,4 +56,11 @@ void LoadNextPageLayer::loadNextPage() {
     } else {
         browser->onNextPage(nullptr);
     }
+
+    m_spinner->runAction(cocos2d::CCSequence::createWithTwoActions(
+        cocos2d::CCDelayTime::create(1.f),
+        cocos2d::CCFadeIn::create(2.f)
+    ));
+
+    return true;
 }
