@@ -11,10 +11,10 @@
     "id": "undefined0.level-swipe",
     "name": "Level Swipe",
     "developer": "undefined0",
-    "description": "balls",
-    "tags": [],
+    "description": "Scroll through levels like short-form content!",
+    "tags": [ "interface", "enhancement" ],
 
     "links": {
-        "source": "https://github.com/undefined06855/example-mod"
+        "source": "https://github.com/undefined06855/Level-Swipe"
     }
 }

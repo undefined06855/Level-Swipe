@@ -1,4 +1,5 @@
 #include "GameManager.hpp"
+#include "LevelBrowserLayer.hpp"
 #include "../LevelInfoLayerLayer.hpp"
 
 void HookedGameManager::returnToLastScene(GJGameLevel* level) {
@@ -7,20 +8,13 @@ void HookedGameManager::returnToLastScene(GJGameLevel* level) {
         return;
     }
 
-    // TODO: this doesnt work lol
-
-    auto director = cocos2d::CCDirector::get();
-
-    // current scene is playlayer or whatever
-    // scene before should be levelbrowserlayer
-    auto sceneBefore = director->m_pobScenesStack->objectAtIndex(director->m_pobScenesStack->count() - 2);
-    auto levelBrowserLayer = geode::cast::typeinfo_cast<LevelBrowserLayer*>(sceneBefore);
+    auto levelBrowserLayer = HookedLevelBrowserLayer::getPreviousLevelBrowserLayer();
     if (!levelBrowserLayer) {
-        // oh well
         GameManager::returnToLastScene(level);
         return;
     }
-
-    auto scene = LevelInfoLayerLayer::scene(levelBrowserLayer, level->m_levelIndex);
-    director->replaceScene(cocos2d::CCTransitionFade::create(.5f, scene));
+    
+    int index = levelBrowserLayer->getIndexFromLevelID(level->m_levelID);
+    auto scene = LevelInfoLayerLayer::scene(levelBrowserLayer, index);
+    cocos2d::CCDirector::get()->replaceScene(cocos2d::CCTransitionFade::create(.5f, scene));
 }

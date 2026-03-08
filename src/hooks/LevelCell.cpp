@@ -1,12 +1,27 @@
 #include "LevelCell.hpp"
 #include "../LevelInfoLayerLayer.hpp"
 
+void HookedLevelCell::onModify(geode::modifier::ModifyBase<geode::modifier::ModifyDerive<HookedLevelCell, LevelCell>>& self) {
+    (void)self.setHookPriorityPost("LevelCell::onClick", geode::Priority::VeryLate);
+}
+
 void HookedLevelCell::onClick(cocos2d::CCObject* sender) {
-    // TODO: change hook prio
+    // some check in levelcell onClick that means gotolevelpage doesnt get called
+    if (m_listType == BoomListType::Level4 && sender->getTag() != 0) {
+        LevelCell::onClick(sender);
+        return;
+    }
+
+    // outdated levels
+    static_assert(GEODE_COMP_GD_VERSION == 22081, "Need to check version for outdatedness\nSee LevelCell::onClick");
+    if (m_level->m_gameVersion > 22) {
+        LevelCell::onClick(sender);
+        return;
+    }
 
     auto browserLayer = cocos2d::CCScene::get()->getChildByType<LevelBrowserLayer>(0);
     if (!browserLayer) {
-        LevelCell::onClick(sender);
+        GameLevelManager::get()->gotoLevelPage(m_level);
         return;
     }
 

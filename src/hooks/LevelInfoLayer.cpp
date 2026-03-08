@@ -1,4 +1,5 @@
 #include "LevelInfoLayer.hpp"
+#include "../LevelInfoLayerLayer.hpp"
 
 HookedLevelInfoLayer::Fields::Fields()
     : m_allowDownloadLevel(false) {}
@@ -9,10 +10,8 @@ void HookedLevelInfoLayer::downloadLevel() {
     LevelInfoLayer::downloadLevel();
 }
 
-// TODO: fix download stuff
+void HookedLevelInfoLayer::keyBackClicked() {
+    if (LevelInfoLayerLayer::get()) return;
 
-void HookedLevelInfoLayer::onEnterTransitionDidFinish() {
-    if (!m_fields->m_allowDownloadLevel) return;
-
-    LevelInfoLayer::onEnterTransitionDidFinish();
+    LevelInfoLayer::keyBackClicked();
 }

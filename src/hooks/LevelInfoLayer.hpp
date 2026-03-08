@@ -9,5 +9,5 @@ class $modify(HookedLevelInfoLayer, LevelInfoLayer) {
     };
 
     void downloadLevel();
-    virtual void onEnterTransitionDidFinish();
+    virtual void keyBackClicked();
 };
