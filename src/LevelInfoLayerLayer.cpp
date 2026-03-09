@@ -120,6 +120,7 @@ bool LevelInfoLayerLayer::init(LevelBrowserLayer* layer, int index) {
     m_scrollLayer->m_page = offset;
     this->scrollLayerWillScrollToPage(m_scrollLayer, offset); // doesn't get called
 
+    this->setKeypadEnabled(true);
     this->setKeyboardEnabled(true);
 
     return true;
@@ -128,6 +129,8 @@ bool LevelInfoLayerLayer::init(LevelBrowserLayer* layer, int index) {
 void LevelInfoLayerLayer::hideBGForLayer(cocos2d::CCLayer* layer) {
     auto bg = layer->getChildByType<cocos2d::CCSprite>(0);
     bg->setVisible(false);
+
+    layer->setKeypadEnabled(false); // disable them eating keyBackClicked
 }
 
 void LevelInfoLayerLayer::changePage(int page) {
@@ -156,6 +159,10 @@ void LevelInfoLayerLayer::onBack() {
     GameManager::get()->safePopScene();
 }
 
+void LevelInfoLayerLayer::keyBackClicked() {
+    this->onBack();
+}
+
 void LevelInfoLayerLayer::keyDown(cocos2d::enumKeyCodes key, double timestamp) {
     if (key == cocos2d::enumKeyCodes::KEY_Left) {
         this->changePage(m_scrollLayer->m_page - 1);
@@ -164,13 +171,6 @@ void LevelInfoLayerLayer::keyDown(cocos2d::enumKeyCodes key, double timestamp) {
 
     if (key == cocos2d::enumKeyCodes::KEY_Right) {
         this->changePage(m_scrollLayer->m_page + 1);
-        return;
-    }
-
-    // sometimes keyBackClicked breaks so this would normally be in keyBackClicked
-    // TODO: maybe fix for android users?
-    if (key == cocos2d::enumKeyCodes::KEY_Escape) {
-        this->onBack();
         return;
     }
 }
