@@ -142,6 +142,20 @@ void LevelInfoLayerLayer::changePage(int page) {
     m_scrollLayer->moveToPage(page);
 }
 
+void LevelInfoLayerLayer::onBack() {
+    for (auto page : m_layers) {
+        if (page && page->m_isBusy) return;
+    }
+
+    auto browser = HookedLevelBrowserLayer::getPreviousLevelBrowserLayer();
+    if (browser) {
+        browser->m_fields->m_isLoadingInBG = false;
+    }
+
+    // idk rob uses it just using it for mod compatibility
+    GameManager::get()->safePopScene();
+}
+
 void LevelInfoLayerLayer::keyDown(cocos2d::enumKeyCodes key, double timestamp) {
     if (key == cocos2d::enumKeyCodes::KEY_Left) {
         this->changePage(m_scrollLayer->m_page - 1);
@@ -154,19 +168,9 @@ void LevelInfoLayerLayer::keyDown(cocos2d::enumKeyCodes key, double timestamp) {
     }
 
     // sometimes keyBackClicked breaks so this would normally be in keyBackClicked
-    // TODO: maybe fix?
+    // TODO: maybe fix for android users?
     if (key == cocos2d::enumKeyCodes::KEY_Escape) {
-        for (auto page : m_layers) {
-            if (page && page->m_isBusy) return;
-        }
-
-        auto browser = HookedLevelBrowserLayer::getPreviousLevelBrowserLayer();
-        if (browser) {
-            browser->m_fields->m_isLoadingInBG = false;
-        }
-
-        // idk rob uses it just using it for mod compatibility
-        GameManager::get()->safePopScene();
+        this->onBack();
         return;
     }
 }
@@ -185,6 +189,7 @@ void LevelInfoLayerLayer::scrollLayerWillScrollToPage(BoomScrollLayer* layer, in
             if (page == 0) m_scrollLayer->instantMoveToPage(1);
             else m_scrollLayer->instantMoveToPage(pages->count() - 2);
         }
+
         return;
     }
 
@@ -198,9 +203,9 @@ void LevelInfoLayerLayer::scrollLayerWillScrollToPage(BoomScrollLayer* layer, in
         return;
     }
 
-    // wait .25s before downloading to buffer in case the user switches quickly to avoid rate limit
+    // wait .5s before downloading to buffer in case the user switches quickly to avoid rate limit
     auto action = cocos2d::CCSequence::createWithTwoActions(
-        cocos2d::CCDelayTime::create(.25f),
+        cocos2d::CCDelayTime::create(.5f),
         geode::cocos::CallFuncExt::create([this, page] { this->downloadLevel(page); })
     );
 

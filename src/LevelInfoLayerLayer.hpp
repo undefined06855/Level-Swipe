@@ -15,6 +15,8 @@ public:
     void changePage(int page);
     void downloadLevel(int page);
 
+    void onBack();
+
     virtual void keyDown(cocos2d::enumKeyCodes key, double timestamp) override;
     virtual void scrollLayerScrollingStarted(BoomScrollLayer* layer) override;
     virtual void scrollLayerWillScrollToPage(BoomScrollLayer* layer, int page) override;

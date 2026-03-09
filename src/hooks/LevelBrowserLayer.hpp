@@ -12,6 +12,6 @@ class $modify(HookedLevelBrowserLayer, LevelBrowserLayer) {
     static HookedLevelBrowserLayer* getPreviousLevelBrowserLayer();
     int getIndexFromLevelID(int levelID);
 
-    void loadLevelsFinished(cocos2d::CCArray* levels, const char* key, int type) override;
-    void loadLevelsFailed(const char* key, int type) override;
+    void loadLevelsFinished(cocos2d::CCArray* levels, const char* key, int type);
+    void loadLevelsFailed(const char* key, int type);
 };

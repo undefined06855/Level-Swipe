@@ -8,6 +8,9 @@ class $modify(HookedLevelInfoLayer, LevelInfoLayer) {
         Fields();
     };
 
+    static void onModify(geode::modifier::ModifyBase<geode::modifier::ModifyDerive<HookedLevelInfoLayer, LevelInfoLayer>>& self);
+
+    void onBack(cocos2d::CCObject* sender);
     void downloadLevel();
     virtual void keyBackClicked();
 };
