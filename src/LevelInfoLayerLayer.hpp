@@ -13,6 +13,7 @@ public:
 
     void hideBGForLayer(cocos2d::CCLayer* layer);
     void changePage(int page);
+    bool shouldDownloadLevel(LevelInfoLayer* page);
     void downloadLevel(int page);
 
     void onBack();

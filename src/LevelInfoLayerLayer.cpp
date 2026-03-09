@@ -1,7 +1,7 @@
 #include "LevelInfoLayerLayer.hpp"
 #include "LoadNextPageLayer.hpp"
-#include "hooks/LevelInfoLayer.hpp"
 #include "hooks/LevelBrowserLayer.hpp"
+#include "hooks/GameLevelManager.hpp"
 
 LevelInfoLayerLayer* LevelInfoLayerLayer::create(LevelBrowserLayer* layer, int index) {
     auto ret = new LevelInfoLayerLayer;
@@ -40,6 +40,9 @@ bool LevelInfoLayerLayer::init(LevelBrowserLayer* layer, int index) {
     int page = layer->m_searchObject->m_page + 1;
 
     pages->addObject(LoadNextPageLayer::create(/* first */ true, page));
+
+    auto glmFields = static_cast<HookedGameLevelManager*>(GameLevelManager::get())->m_fields.self();
+    glmFields->m_allowDownloadingLevel = false;
 
     for (int i = 0; i < levels.size(); i++) {
         auto level = levels[i];
@@ -100,6 +103,8 @@ bool LevelInfoLayerLayer::init(LevelBrowserLayer* layer, int index) {
         pages->addObject(cocos2d::CCLabelBMFont::create(message.c_str(), "bigFont.fnt"));
     }
 
+    glmFields->m_allowDownloadingLevel = true;
+
     pages->addObject(LoadNextPageLayer::create(/* last */ false, page));
 
     int offset = index + 1; // go to page index+1 (add one because of loadnextpagelayer)
@@ -159,6 +164,7 @@ void LevelInfoLayerLayer::onBack() {
     GameManager::get()->safePopScene();
 }
 
+// TODO: need to fix this not working sometimes
 void LevelInfoLayerLayer::keyBackClicked() {
     this->onBack();
 }
@@ -214,6 +220,28 @@ void LevelInfoLayerLayer::scrollLayerWillScrollToPage(BoomScrollLayer* layer, in
     this->runAction(action);
 }
 
+// TODO: this isn't really correct? need to fix
+bool LevelInfoLayerLayer::shouldDownloadLevel(LevelInfoLayer* page) {
+    auto level = page->m_level;
+
+    // online levels
+    if (level->m_levelType == GJLevelType::SearchResult) return true;
+
+    // if (page->shouldDownloadLevel()) return true;
+
+    if (level->m_localOrSaved) return false;
+
+    // ???
+    if (level->m_levelString.size() == 0) {
+        auto searchType = GameLevelManager::get()->m_searchType;
+        if (searchType != SearchType::SavedLevels && searchType != SearchType::FavouriteLevels) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void LevelInfoLayerLayer::downloadLevel(int page) {
     this->stopActionByTag(1); // in case downloadLevel was called from somewhere else
     auto pages = m_scrollLayer->m_pages;
@@ -221,9 +249,17 @@ void LevelInfoLayerLayer::downloadLevel(int page) {
     auto infoLayer = geode::cast::typeinfo_cast<LevelInfoLayer*>(pages->objectAtIndex(page));
     if (!infoLayer) return;
 
-    static_cast<HookedLevelInfoLayer*>(infoLayer)->m_fields->m_allowDownloadLevel = true;
     infoLayer->onEnterTransitionDidFinish();
-    if (infoLayer->shouldDownloadLevel()) infoLayer->downloadLevel();
+
+    if (this->shouldDownloadLevel(infoLayer)) {
+        infoLayer->downloadLevel();
+    } else {
+        // taken also from levelinfolayer init
+        auto glm = GameLevelManager::get();
+        glm->m_levelUpdateDelegate = infoLayer;
+        infoLayer->m_level->m_levelVersion = -1;
+        glm->updateLevel(infoLayer->m_level);
+    }
 
     GameManager::get()->m_currentLevelID = infoLayer->m_level->m_levelID;
 }
